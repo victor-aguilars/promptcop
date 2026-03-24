@@ -19,7 +19,7 @@ export function format(results: LintResult[], mode: FormatMode, version = '0.1.0
 
   // default mode
   const lines: string[] = [];
-  lines.push(chalk.bold(`promptcop v${version}`));
+  lines.push(chalk.bold(`promptocop v${version}`));
   lines.push('');
 
   const sorted = [...results].sort((a, b) => {

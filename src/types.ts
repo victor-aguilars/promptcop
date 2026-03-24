@@ -23,7 +23,7 @@ export interface LintResult {
   line?: number;
 }
 
-export interface PromptcopConfig {
+export interface PromptocopConfig {
   extends?: string[];
   rules?: Record<string, Severity>;
   options?: Record<string, Record<string, unknown>>;

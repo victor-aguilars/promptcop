@@ -1,10 +1,10 @@
 import { readFileSync, existsSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import yaml from 'js-yaml';
-import type { PromptcopConfig, Severity } from './types.js';
+import type { PromptocopConfig, Severity } from './types.js';
 import { recommended } from './presets/recommended.js';
 
-function deepMergeConfigs(base: PromptcopConfig, override: PromptcopConfig): PromptcopConfig {
+function deepMergeConfigs(base: PromptocopConfig, override: PromptocopConfig): PromptocopConfig {
   return {
     rules: { ...base.rules, ...override.rules } as Record<string, Severity>,
     options: {
@@ -19,14 +19,14 @@ function deepMergeConfigs(base: PromptcopConfig, override: PromptcopConfig): Pro
   };
 }
 
-function resolveExtends(config: PromptcopConfig): PromptcopConfig {
+function resolveExtends(config: PromptocopConfig): PromptocopConfig {
   if (!config.extends || config.extends.length === 0) {
     return config;
   }
 
-  let base: PromptcopConfig = {};
+  let base: PromptocopConfig = {};
   for (const preset of config.extends) {
-    if (preset === 'promptcop:recommended') {
+    if (preset === 'promptocop:recommended') {
       base = deepMergeConfigs(base, recommended);
     }
     // Future: support external preset packages
@@ -36,7 +36,7 @@ function resolveExtends(config: PromptcopConfig): PromptcopConfig {
   return deepMergeConfigs(base, rest);
 }
 
-export function loadConfig(startDir?: string): PromptcopConfig {
+export function loadConfig(startDir?: string): PromptocopConfig {
   const dir = startDir ?? process.cwd();
   const configPath = findConfigFile(dir);
 
@@ -46,7 +46,7 @@ export function loadConfig(startDir?: string): PromptcopConfig {
 
   try {
     const raw = readFileSync(configPath, 'utf8');
-    const parsed = yaml.load(raw) as PromptcopConfig;
+    const parsed = yaml.load(raw) as PromptocopConfig;
     if (!parsed || typeof parsed !== 'object') {
       return recommended;
     }
@@ -61,8 +61,8 @@ function findConfigFile(startDir: string): string | null {
 
   while (true) {
     const candidates = [
-      resolve(current, '.promptcop.yml'),
-      resolve(current, '.promptcop.yaml'),
+      resolve(current, '.promptocop.yml'),
+      resolve(current, '.promptocop.yaml'),
     ];
     for (const candidate of candidates) {
       if (existsSync(candidate)) return candidate;

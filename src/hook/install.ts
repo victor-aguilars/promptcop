@@ -3,8 +3,8 @@ import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 
 const SETTINGS_PATH = join(homedir(), '.claude', 'settings.json');
-const HOOK_COMMAND = 'promptcop lint --format compact --hook -';
-const HOOK_MARKER = 'promptcop';
+const HOOK_COMMAND = 'promptocop lint --format compact --hook -';
+const HOOK_MARKER = 'promptocop';
 
 interface HookEntry {
   type: string;
@@ -56,7 +56,7 @@ export function install(): void {
   const settings = readSettings();
 
   if (isAlreadyInstalled(settings)) {
-    console.log('promptcop hook is already installed.');
+    console.log('promptocop hook is already installed.');
     return;
   }
 
@@ -78,7 +78,7 @@ export function install(): void {
   });
 
   writeSettings(settings);
-  console.log(`promptcop hook installed in ${SETTINGS_PATH}`);
+  console.log(`promptocop hook installed in ${SETTINGS_PATH}`);
   console.log('Prompts will now be linted before being sent to Claude.');
 }
 
@@ -91,7 +91,7 @@ export function uninstall(): void {
   const settings = readSettings();
 
   if (!isAlreadyInstalled(settings)) {
-    console.log('promptcop hook is not installed.');
+    console.log('promptocop hook is not installed.');
     return;
   }
 
@@ -109,5 +109,5 @@ export function uninstall(): void {
   }
 
   writeSettings(settings);
-  console.log(`promptcop hook removed from ${SETTINGS_PATH}`);
+  console.log(`promptocop hook removed from ${SETTINGS_PATH}`);
 }

@@ -13,7 +13,7 @@ const { version: VERSION } = JSON.parse(readFileSync(new URL('../package.json', 
 const program = new Command();
 
 program
-  .name('promptcop')
+  .name('promptocop')
   .description('A prompt linter for Claude Code')
   .version(VERSION);
 
@@ -92,15 +92,15 @@ program
 
 program
   .command('init')
-  .description('Initialize a .promptcop.yml in the current directory')
+  .description('Initialize a .promptocop.yml in the current directory')
   .action(async () => {
     const { existsSync, writeFileSync } = await import('node:fs');
-    if (existsSync('.promptcop.yml')) {
-      console.error('.promptcop.yml already exists');
+    if (existsSync('.promptocop.yml')) {
+      console.error('.promptocop.yml already exists');
       process.exit(1);
     }
     const template = `extends:
-  - promptcop:recommended
+  - promptocop:recommended
 
 rules:
   no-vague-verb: error
@@ -118,8 +118,8 @@ rules:
 #       - "touch"
 #       - "revisit"
 `;
-    writeFileSync('.promptcop.yml', template, 'utf8');
-    console.log('Created .promptcop.yml');
+    writeFileSync('.promptocop.yml', template, 'utf8');
+    console.log('Created .promptocop.yml');
   });
 
 program
@@ -127,7 +127,7 @@ program
   .description('Manage Claude Code hook integration')
   .addCommand(
     new Command('install')
-      .description('Install the promptcop hook into ~/.claude/settings.json')
+      .description('Install the promptocop hook into ~/.claude/settings.json')
       .action(async () => {
         const { install } = await import('./hook/install.js');
         install();
@@ -135,7 +135,7 @@ program
   )
   .addCommand(
     new Command('uninstall')
-      .description('Remove the promptcop hook from ~/.claude/settings.json')
+      .description('Remove the promptocop hook from ~/.claude/settings.json')
       .action(async () => {
         const { uninstall } = await import('./hook/install.js');
         uninstall();

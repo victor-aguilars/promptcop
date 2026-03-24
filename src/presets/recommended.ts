@@ -1,6 +1,6 @@
-import type { PromptcopConfig } from '../types.js';
+import type { PromptocopConfig } from '../types.js';
 
-export const recommended: PromptcopConfig = {
+export const recommended: PromptocopConfig = {
   rules: {
     'no-vague-verb': 'error',
     'no-ambiguous-pronoun': 'error',

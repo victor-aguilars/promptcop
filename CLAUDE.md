@@ -1,4 +1,4 @@
-# promptcop
+# promptocop
 
 A prompt linter for Claude Code. Catches bad prompt patterns before they reach the model — like ESLint, but for the things you type at Claude.
 
@@ -6,10 +6,10 @@ A prompt linter for Claude Code. Catches bad prompt patterns before they reach t
 
 ## Project overview
 
-`promptcop` is a Node.js CLI tool that analyzes prompts for anti-patterns known to cause correction loops, token waste, and task drift. It ships with a rule engine modeled after ESLint: rules have severity levels (error/warn/info), are individually configurable via a `.promptcop.yml` config file, and can be organized into shareable presets.
+`promptocop` is a Node.js CLI tool that analyzes prompts for anti-patterns known to cause correction loops, token waste, and task drift. It ships with a rule engine modeled after ESLint: rules have severity levels (error/warn/info), are individually configurable via a `.promptocop.yml` config file, and can be organized into shareable presets.
 
 There are two integration modes:
-1. **Standalone CLI** — `promptcop lint "your prompt"` run manually before sending
+1. **Standalone CLI** — `promptocop lint "your prompt"` run manually before sending
 2. **Claude Code hook** — wired into Claude Code's `PreToolUse` lifecycle hook so it runs automatically before every message
 
 ---
@@ -22,18 +22,18 @@ There are two integration modes:
 - **Config parsing:** `js-yaml`
 - **Output formatting:** `chalk` + `ora`
 - **Testing:** `vitest`
-- **Distribution:** npm package, executable via `npx promptcop`
+- **Distribution:** npm package, executable via `npx promptocop`
 
 ---
 
 ## Project structure
 
 ```
-promptcop/
+promptocop/
 ├── src/
 │   ├── cli.ts              # Entry point, commander setup
 │   ├── linter.ts           # Core lint runner — loads rules, runs them, collects results
-│   ├── config.ts           # .promptcop.yml loader and resolver
+│   ├── config.ts           # .promptocop.yml loader and resolver
 │   ├── formatter.ts        # Output formatting (default, json, compact)
 │   ├── fixer.ts            # --fix mode: applies auto-fixes to prompt
 │   ├── rules/
@@ -50,7 +50,7 @@ promptcop/
 │   │   └── recommended.ts  # Default ruleset and severities
 │   └── hook/
 │       └── install.ts      # Claude Code hook installer
-├── .promptcop.yml          # Example config (used for dogfooding)
+├── .promptocop.yml          # Example config (used for dogfooding)
 ├── CLAUDE.md               # This file
 ├── package.json
 ├── tsconfig.json
@@ -72,7 +72,7 @@ interface Rule {
   severity: 'error' | 'warn' | 'info';  // default, overridable via config
   check(prompt: string): RuleResult;
   fix?(prompt: string): string;          // optional auto-fix
-  explain(): string;                     // shown by `promptcop explain <rule>`
+  explain(): string;                     // shown by `promptocop explain <rule>`
 }
 
 interface RuleResult {
@@ -120,31 +120,31 @@ Triggered when `it`, `this`, `that`, `these`, `those` appear as the direct objec
 
 ```bash
 # Lint a prompt string
-promptcop lint "refactor the auth module"
+promptocop lint "refactor the auth module"
 
 # Lint from stdin (useful for piping)
-echo "fix the bug" | promptcop lint -
+echo "fix the bug" | promptocop lint -
 
 # Auto-fix mode — rewrites prompt with placeholders
-promptcop lint "refactor the auth module" --fix
+promptocop lint "refactor the auth module" --fix
 
 # Output as JSON (for tooling integration)
-promptcop lint "refactor the auth module" --format json
+promptocop lint "refactor the auth module" --format json
 
 # Explain a specific rule
-promptcop explain no-vague-verb
+promptocop explain no-vague-verb
 
 # List all available rules
-promptcop rules
+promptocop rules
 
 # Install the Claude Code hook
-promptcop hook install
+promptocop hook install
 
 # Uninstall the Claude Code hook
-promptcop hook uninstall
+promptocop hook uninstall
 
-# Initialize a .promptcop.yml in current directory
-promptcop init
+# Initialize a .promptocop.yml in current directory
+promptocop init
 ```
 
 ---
@@ -152,7 +152,7 @@ promptcop init
 ## Output format (default)
 
 ```
-promptcop v0.1.0
+promptocop v0.1.0
 
 ✖ error    no-vague-verb          "refactor" needs a target, pattern, or goal
 ⚠ warning  no-file-context        No file or code reference found — add a file path or identifier to narrow scope
@@ -165,13 +165,13 @@ promptcop v0.1.0
 
 ---
 
-## Config file (.promptcop.yml)
+## Config file (.promptocop.yml)
 
 Resolved from current directory upward (same as ESLint).
 
 ```yaml
 extends:
-  - promptcop:recommended
+  - promptocop:recommended
 
 rules:
   no-vague-verb: error
@@ -188,7 +188,7 @@ options:
       - "revisit"
 ```
 
-If no config is found, `promptcop:recommended` is used as the default.
+If no config is found, `promptocop:recommended` is used as the default.
 
 ---
 
@@ -196,10 +196,10 @@ If no config is found, `promptcop:recommended` is used as the default.
 
 Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under the `hooks` key. The `UserPromptSubmit` hook fires when the user submits a message, receiving the prompt on stdin and blocking if the process exits with a non-zero code.
 
-### What `promptcop hook install` does
+### What `promptocop hook install` does
 
 1. Reads `~/.claude/settings.json` (creates it if missing)
-2. Appends a `UserPromptSubmit` hook entry pointing to the `promptcop` binary
+2. Appends a `UserPromptSubmit` hook entry pointing to the `promptocop` binary
 3. Sets hook to block on errors, warn on warnings
 
 ### Hook behavior
@@ -219,7 +219,7 @@ Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under 
         "hooks": [
           {
             "type": "command",
-            "command": "promptcop lint --format compact --hook -"
+            "command": "promptocop lint --format compact --hook -"
           }
         ]
       }
@@ -237,7 +237,7 @@ The v1 rule engine is entirely static (regex + heuristics). This is intentional 
 A future `--ai` flag will pipe the prompt to Claude for deeper analysis that static rules can't catch:
 
 ```bash
-promptcop lint "refactor the auth module" --ai
+promptocop lint "refactor the auth module" --ai
 ```
 
 ### Planned LLM-powered rules
@@ -282,6 +282,6 @@ promptcop lint "refactor the auth module" --ai
 - [x] `--fix` mode
 - [x] `explain` command
 - [x] Hook installer
-- [x] `promptcop:recommended` preset
+- [x] `promptocop:recommended` preset
 - [ ] README
 - [ ] npm publish setup

@@ -1,10 +1,10 @@
 {
-  "name": "promptcop",
+  "name": "promptocop",
   "version": "0.1.0",
   "description": "A prompt linter for Claude Code — catches bad prompt patterns before they reach the model",
   "type": "module",
   "bin": {
-    "promptcop": "dist/cli.js"
+    "promptocop": "dist/cli.js"
   },
   "main": "dist/linter.js",
   "types": "dist/linter.d.ts",
@@ -40,11 +40,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/victor-aguilars/promptcop.git"
+    "url": "https://github.com/victor-aguilars/promptocop.git"
   },
-  "homepage": "https://github.com/victor-aguilars/promptcop#readme",
+  "homepage": "https://github.com/victor-aguilars/promptocop#readme",
   "bugs": {
-    "url": "https://github.com/victor-aguilars/promptcop/issues"
+    "url": "https://github.com/victor-aguilars/promptocop/issues"
   },
   "engines": {
     "node": ">=18"

@@ -1,10 +1,10 @@
-import type { LintResult, PromptcopConfig, Rule } from './types.js';
+import type { LintResult, PromptocopConfig, Rule } from './types.js';
 
 export function applyFixes(
   prompt: string,
   results: LintResult[],
   allRules: Rule[],
-  config: PromptcopConfig,
+  config: PromptocopConfig,
 ): string {
   // Sort: errors first, then by rule name for determinism
   const failed = results

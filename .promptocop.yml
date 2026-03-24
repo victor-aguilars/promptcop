@@ -1,5 +1,5 @@
 extends:
-  - promptcop:recommended
+  - promptocop:recommended
 
 rules:
   no-vague-verb: error

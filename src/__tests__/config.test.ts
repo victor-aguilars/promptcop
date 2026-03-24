@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { loadConfig } from '../config.js';
 import { recommended } from '../presets/recommended.js';
 
-function writeTempConfig(dir: string, content: string, filename = '.promptcop.yml') {
+function writeTempConfig(dir: string, content: string, filename = '.promptocop.yml') {
   writeFileSync(join(dir, filename), content, 'utf8');
 }
 
@@ -13,7 +13,7 @@ describe('loadConfig', () => {
   let tmpDir: string;
 
   beforeEach(() => {
-    tmpDir = mkdtempSync(join(tmpdir(), 'promptcop-test-'));
+    tmpDir = mkdtempSync(join(tmpdir(), 'promptocop-test-'));
   });
 
   afterEach(() => {
@@ -25,7 +25,7 @@ describe('loadConfig', () => {
     expect(config.rules).toEqual(recommended.rules);
   });
 
-  it('loads a .promptcop.yml file', () => {
+  it('loads a .promptocop.yml file', () => {
     writeTempConfig(tmpDir, `
 rules:
   no-vague-verb: off
@@ -37,7 +37,7 @@ rules:
   it('merges user rules on top of recommended when extends is set', () => {
     writeTempConfig(tmpDir, `
 extends:
-  - promptcop:recommended
+  - promptocop:recommended
 rules:
   no-vague-verb: off
 `);
@@ -61,7 +61,7 @@ rules:
   it('loads options for per-rule config', () => {
     writeTempConfig(tmpDir, `
 extends:
-  - promptcop:recommended
+  - promptocop:recommended
 options:
   no-vague-verb:
     additionalVerbs:

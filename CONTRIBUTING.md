@@ -1,4 +1,4 @@
-# Contributing to promptcop
+# Contributing to promptocop
 
 Thanks for your interest in contributing! This guide covers everything you need to get started.
 
@@ -10,8 +10,8 @@ Thanks for your interest in contributing! This guide covers everything you need 
 ## Dev setup
 
 ```bash
-git clone https://github.com/victor-aguilars/promptcop.git
-cd promptcop
+git clone https://github.com/victor-aguilars/promptocop.git
+cd promptocop
 npm install
 npm test          # run all tests
 npm run build     # compile TypeScript to dist/
@@ -35,7 +35,7 @@ Each rule is a single file. Here's how to add one:
        // return { passed: true } or { passed: false, message: '...' }
      },
      explain() {
-       return 'Longer explanation shown by `promptcop explain my-rule`';
+       return 'Longer explanation shown by `promptocop explain my-rule`';
      },
    };
 
@@ -59,7 +59,7 @@ Each rule is a single file. Here's how to add one:
 - One rule per PR — keeps review focused
 - Tests are required; PRs without test coverage won't be merged
 - Use conventional commit messages: `feat: add no-passive-voice rule`, `fix: handle multiline prompts in no-vague-verb`
-- Run `promptcop lint` on your own commit messages and PR description before opening
+- Run `promptocop lint` on your own commit messages and PR description before opening
 - Add a changeset describing your change: `npx changeset`
 
 ## Submitting a changeset
@@ -76,4 +76,4 @@ Follow the prompts to describe whether your change is a `patch`, `minor`, or `ma
 
 ## Reporting bugs
 
-Open an issue at https://github.com/victor-aguilars/promptcop/issues. Include the prompt that triggered unexpected behavior and the output you got vs. what you expected.
+Open an issue at https://github.com/victor-aguilars/promptocop/issues. Include the prompt that triggered unexpected behavior and the output you got vs. what you expected.

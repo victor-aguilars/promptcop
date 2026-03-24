@@ -1,7 +1,7 @@
 <div align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="assets/logo-dark.svg">
-    <img src="assets/logo.svg" alt="promptcop" height="120" />
+    <img src="assets/logo.svg" alt="promptocop" height="120" />
   </picture>
 </div>
 
@@ -14,20 +14,20 @@ A prompt linter for Claude Code. Catches bad prompt patterns before they reach t
 No install required:
 
 ```bash
-npx promptcop lint "refactor the auth module"
+npx promptocop lint "refactor the auth module"
 ```
 
 For regular use, install globally:
 
 ```bash
-npm install -g promptcop
-promptcop lint "refactor the auth module"
+npm install -g promptocop
+promptocop lint "refactor the auth module"
 ```
 
 **Example output:**
 
 ```
-promptcop v0.1.0
+promptocop v0.1.0
 
 ✖ error   no-vague-verb                "refactor" needs a target, pattern, or goal
 ⚠ warning no-constraints               No constraints specified — consider adding limits, requirements, or restrictions
@@ -56,7 +56,7 @@ promptcop v0.1.0
 | `context-dump-risk` | warn | no | Pasted logs, large code blocks, or excessively long prompts |
 | `prefer-example` | info | no | Long prompts with no example to illustrate the goal |
 
-Run `promptcop explain <rule>` for details on any rule.
+Run `promptocop explain <rule>` for details on any rule.
 
 ---
 
@@ -64,36 +64,36 @@ Run `promptcop explain <rule>` for details on any rule.
 
 ```bash
 # Lint a prompt string
-promptcop lint "your prompt here"
+promptocop lint "your prompt here"
 
 # Lint from stdin
-echo "fix the bug" | promptcop lint -
+echo "fix the bug" | promptocop lint -
 
 # Auto-fix — rewrites the prompt with placeholders where vague
-promptcop lint "refactor the auth module" --fix
+promptocop lint "refactor the auth module" --fix
 
 # JSON output (for scripting/tooling)
-promptcop lint "your prompt" --format json
+promptocop lint "your prompt" --format json
 
 # List all rules with severities
-promptcop rules
+promptocop rules
 
 # Explain a rule
-promptcop explain no-vague-verb
+promptocop explain no-vague-verb
 
-# Create a .promptcop.yml config in the current directory
-promptcop init
+# Create a .promptocop.yml config in the current directory
+promptocop init
 ```
 
 ---
 
 ## Configuration
 
-Create a `.promptcop.yml` (or run `promptcop init`):
+Create a `.promptocop.yml` (or run `promptocop init`):
 
 ```yaml
 extends:
-  - promptcop:recommended
+  - promptocop:recommended
 
 rules:
   no-vague-verb: error
@@ -107,16 +107,16 @@ options:
       - "revisit"
 ```
 
-Config is resolved upward from the current directory, the same way ESLint does it. If no config is found, `promptcop:recommended` is used.
+Config is resolved upward from the current directory, the same way ESLint does it. If no config is found, `promptocop:recommended` is used.
 
 ---
 
 ## Claude Code hook
 
-Wire promptcop into Claude Code so it lints every prompt automatically before sending:
+Wire promptocop into Claude Code so it lints every prompt automatically before sending:
 
 ```bash
-promptcop hook install
+promptocop hook install
 ```
 
 This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`. From that point on:
@@ -128,7 +128,7 @@ This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`. From that poin
 To remove the hook:
 
 ```bash
-promptcop hook uninstall
+promptocop hook uninstall
 ```
 
 ---
@@ -137,7 +137,7 @@ promptcop hook uninstall
 
 ```bash
 git clone <repo>
-cd promptcop
+cd promptocop
 npm install
 npm test          # run all tests (vitest)
 npm run build     # compile TypeScript to dist/
