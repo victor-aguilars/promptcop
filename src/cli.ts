@@ -8,7 +8,7 @@ import type { FormatMode } from './formatter.js';
 import { getRuleByName, rules } from './rules/index.js';
 import { loadConfig } from './config.js';
 
-const VERSION = '0.1.0';
+const { version: VERSION } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
 
 const program = new Command();
 

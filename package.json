@@ -7,18 +7,26 @@
     "promptcop": "dist/cli.js"
   },
   "main": "dist/linter.js",
+  "types": "dist/linter.d.ts",
   "exports": {
-    ".": "./dist/linter.js"
+    ".": {
+      "types": "./dist/linter.d.ts",
+      "import": "./dist/linter.js"
+    }
   },
   "files": [
     "dist",
-    "README.md"
+    "README.md",
+    "LICENSE"
   ],
   "scripts": {
     "build": "tsc",
     "dev": "tsx src/cli.ts",
     "test": "vitest run",
     "test:watch": "vitest",
+    "changeset": "changeset",
+    "version": "changeset version",
+    "release": "npm run build && changeset publish",
     "prepublishOnly": "npm run build && npm test"
   },
   "keywords": [
@@ -28,7 +36,16 @@
     "claude-code",
     "ai"
   ],
+  "author": "victor-aguilars",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/victor-aguilars/promptcop.git"
+  },
+  "homepage": "https://github.com/victor-aguilars/promptcop#readme",
+  "bugs": {
+    "url": "https://github.com/victor-aguilars/promptcop/issues"
+  },
   "engines": {
     "node": ">=18"
   },
@@ -39,6 +56,7 @@
     "ora": "^8.1.0"
   },
   "devDependencies": {
+    "@changesets/cli": "^2.30.0",
     "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
     "tsx": "^4.19.0",
