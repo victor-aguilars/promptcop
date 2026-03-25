@@ -27,7 +27,7 @@ promptocop lint "refactor the auth module"
 **Example output:**
 
 ```
-promptocop v0.1.0
+promptocop v0.1.1
 
 ✖ error   no-vague-verb                "refactor" needs a target, pattern, or goal
 ⚠ warning no-constraints               No constraints specified — consider adding limits, requirements, or restrictions
@@ -100,6 +100,12 @@ rules:
   missing-success-criteria: off   # disable a rule
   prefer-example: warn            # change severity
 
+# Block prompts with errors when used as a Claude Code hook:
+# strict: true
+
+# Disable conversation-aware classification:
+# conversationAware: false
+
 options:
   no-vague-verb:
     additionalVerbs:
@@ -119,11 +125,32 @@ Wire promptocop into Claude Code so it lints every prompt automatically before s
 promptocop hook install
 ```
 
-This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`. From that point on:
+This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`.
 
-- **Errors** → the send is blocked and violations are shown
-- **Warnings** → shown as output, but the send goes through
-- **All pass** → silent
+### Default mode (non-blocking)
+
+Violations are surfaced as additional context — Claude sees the lint feedback alongside your prompt and can self-correct. The message is never blocked.
+
+### Strict mode (blocking)
+
+Enable `strict: true` in `.promptocop.yml` to block prompts with errors. Warnings remain non-blocking.
+
+```yaml
+# .promptocop.yml
+strict: true
+```
+
+### Conversation-aware classification
+
+The hook is smart about conversational replies that would generate false positives:
+
+| Message type | Example | Behavior |
+|---|---|---|
+| Confirmation | "yes", "sounds good", "go ahead" | Skipped entirely |
+| Follow-up | "now continue with authorization" | Context rules skipped |
+| Standalone | "refactor src/auth.ts to use JWT" | Full lint |
+
+The classifier reads the conversation transcript to improve accuracy — if Claude asked you a question and your reply is short, it's treated as a confirmation automatically.
 
 To remove the hook:
 

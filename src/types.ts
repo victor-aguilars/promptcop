@@ -27,4 +27,6 @@ export interface PromptocopConfig {
   extends?: string[];
   rules?: Record<string, Severity>;
   options?: Record<string, Record<string, unknown>>;
+  strict?: boolean;
+  conversationAware?: boolean;
 }

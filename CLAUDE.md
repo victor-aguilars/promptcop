@@ -10,7 +10,7 @@ A prompt linter for Claude Code. Catches bad prompt patterns before they reach t
 
 There are two integration modes:
 1. **Standalone CLI** — `promptocop lint "your prompt"` run manually before sending
-2. **Claude Code hook** — wired into Claude Code's `PreToolUse` lifecycle hook so it runs automatically before every message
+2. **Claude Code hook** — wired into Claude Code's `UserPromptSubmit` lifecycle hook so it runs automatically before every message
 
 ---
 
@@ -194,19 +194,25 @@ If no config is found, `promptocop:recommended` is used as the default.
 
 ## Claude Code hook integration
 
-Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under the `hooks` key. The `UserPromptSubmit` hook fires when the user submits a message, receiving the prompt on stdin and blocking if the process exits with a non-zero code.
+Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under the `hooks` key. The `UserPromptSubmit` hook fires when the user submits a message, receiving the prompt as JSON on stdin (`{ "prompt": "..." }`).
 
 ### What `promptocop hook install` does
 
 1. Reads `~/.claude/settings.json` (creates it if missing)
 2. Appends a `UserPromptSubmit` hook entry pointing to the `promptocop` binary
-3. Sets hook to block on errors, warn on warnings
 
 ### Hook behavior
 
-- **Errors found** → exits 1, Claude Code blocks the send and surfaces the output
-- **Warnings only** → exits 0 with output (non-blocking), Claude Code shows it
-- **All pass** → exits 0 silently
+`UserPromptSubmit` fires *after* the user presses Enter — there is no pre-submit hook in Claude Code. Because forcing a user to retype/resubmit their prompt is disruptive, the default mode is **non-blocking**.
+
+**Default mode (no `--strict`):**
+- Any violations → writes `{ "additionalContext": "..." }` JSON to stdout, exits 0 — Claude sees the lint feedback as context before responding, but the prompt is never blocked
+- All pass → exits 0 silently
+
+**Strict mode (`--strict` flag or `strict: true` in `.promptocop.yml`):**
+- Errors found → writes compact violations to stderr, exits 2 — Claude Code blocks the send
+- Warnings only → writes `{ "additionalContext": "..." }` JSON to stdout, exits 0 (non-blocking)
+- All pass → exits 0 silently
 
 ### Hook config shape (written into settings.json)
 
@@ -219,13 +225,19 @@ Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under 
         "hooks": [
           {
             "type": "command",
-            "command": "promptocop lint --format compact --hook -"
+            "command": "npx promptocop lint --hook -"
           }
         ]
       }
     ]
   }
 }
+```
+
+To enable strict mode without editing the hook command, add to your `.promptocop.yml`:
+
+```yaml
+strict: true
 ```
 
 ---
