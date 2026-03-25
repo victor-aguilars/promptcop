@@ -1,5 +1,11 @@
 # promptocop
 
+## 0.1.2
+
+### Patch Changes
+
+- 8de8e89: fix: hook always errors because stdin JSON is not parsed
+
 ## 0.1.1
 
 ### Patch Changes
