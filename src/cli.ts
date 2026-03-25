@@ -27,7 +27,17 @@ program
     let prompt: string;
 
     if (promptArg === '-' || promptArg === undefined) {
-      prompt = await readStdin();
+      const rawInput = await readStdin();
+      if (options.hook) {
+        try {
+          const parsed = JSON.parse(rawInput) as { prompt?: string };
+          prompt = parsed.prompt ?? '';
+        } catch {
+          prompt = rawInput;
+        }
+      } else {
+        prompt = rawInput;
+      }
     } else {
       prompt = promptArg;
     }
@@ -155,4 +165,4 @@ function readStdin(): Promise<string> {
   });
 }
 
-program.parse();
+program.parseAsync();
