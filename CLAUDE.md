@@ -225,7 +225,7 @@ Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under 
         "hooks": [
           {
             "type": "command",
-            "command": "npx promptocop lint --hook -"
+            "command": "npx promptocop@latest lint --hook -"
           }
         ]
       }

@@ -26,7 +26,8 @@ program
   .option('--format <mode>', 'Output format: default, json, compact', 'default')
   .option('--hook', 'Hook mode: lint results injected as context (non-blocking by default)')
   .option('--strict', 'Strict hook mode: block prompts with errors (requires --hook)')
-  .action(async (promptArg: string | undefined, options: { fix: boolean; format: string; hook: boolean; strict: boolean }) => {
+  .option('--debug', 'Print debug info to stderr (useful for verifying hook is running)')
+  .action(async (promptArg: string | undefined, options: { fix: boolean; format: string; hook: boolean; strict: boolean; debug: boolean }) => {
     let prompt: string;
     let transcriptPath: string | undefined;
 
@@ -63,6 +64,7 @@ program
 
       if (promptClass === 'confirmation') {
         if (options.hook) {
+          debugLog('skipped — confirmation detected', options.debug);
           process.exit(0);
         }
         console.log('Prompt classified as a confirmation — nothing to lint.');
@@ -70,6 +72,7 @@ program
       }
 
       if (promptClass === 'follow-up') {
+        debugLog(`classified as follow-up — reduced ruleset (${prompt.length} chars)`, options.debug);
         const results = lint(prompt, config, FOLLOW_UP_SKIP_RULES);
         if (options.fix) {
           const { applyFixes } = await import('./fixer.js');
@@ -81,7 +84,7 @@ program
           }
           const fixedResults = lint(fixed, config, FOLLOW_UP_SKIP_RULES);
           if (options.hook) {
-            exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config);
+            exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config, options.debug);
           }
           const output = format(fixedResults, formatMode, VERSION);
           if (output) console.log(output);
@@ -89,7 +92,7 @@ program
           process.exit(hasErrors ? 1 : 0);
         }
         if (options.hook) {
-          exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config);
+          exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config, options.debug);
         }
         const output = format(results, formatMode, VERSION);
         if (output) console.log(output);
@@ -98,6 +101,7 @@ program
       }
     }
 
+    debugLog(`linting prompt (${prompt.length} chars)`, options.debug);
     const results = lint(prompt, config);
 
     if (options.fix) {
@@ -110,7 +114,7 @@ program
       }
       const fixedResults = lint(fixed, config);
       if (options.hook) {
-        exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config);
+        exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config, options.debug);
       }
       const output = format(fixedResults, formatMode, VERSION);
       if (output) console.log(output);
@@ -119,7 +123,7 @@ program
     }
 
     if (options.hook) {
-      exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config);
+      exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config, options.debug);
     }
 
     const output = format(results, formatMode, VERSION);
@@ -211,7 +215,11 @@ program
       }),
   );
 
-function exitHookMode(results: LintResult[], version: string, strict: boolean, config: PromptocopConfig): never {
+function debugLog(message: string, debug: boolean): void {
+  if (debug) process.stderr.write(`[promptocop] ${message}\n`);
+}
+
+function exitHookMode(results: LintResult[], version: string, strict: boolean, config: PromptocopConfig, debug: boolean): never {
   const hasErrors = results.some((r) => !r.passed && r.severity === 'error');
   const hasFailures = results.some((r) => !r.passed);
   const formatMode: FormatMode = config.context?.mode === 'compact' ? 'compact' : 'directive';
@@ -219,15 +227,24 @@ function exitHookMode(results: LintResult[], version: string, strict: boolean, c
   if (strict && hasErrors) {
     // Strict mode: block prompt, write violations to stderr, exit 2
     const output = format(results, formatMode, version);
+    const errorCount = results.filter((r) => !r.passed && r.severity === 'error').length;
+    debugLog(`blocked — ${errorCount} error${errorCount !== 1 ? 's' : ''} (strict mode)`, debug);
     process.stderr.write(output + '\n');
     process.exit(2);
   } else if (hasFailures) {
     // Non-blocking: surface all violations as additionalContext, exit 0
     const text = format(results, formatMode, version);
+    const errorCount = results.filter((r) => !r.passed && r.severity === 'error').length;
+    const warnCount = results.filter((r) => !r.passed && r.severity === 'warn').length;
+    const parts = [];
+    if (errorCount) parts.push(`${errorCount} error${errorCount !== 1 ? 's' : ''}`);
+    if (warnCount) parts.push(`${warnCount} warning${warnCount !== 1 ? 's' : ''}`);
+    debugLog(`${parts.join(', ')} — injected as context`, debug);
     process.stdout.write(JSON.stringify({ additionalContext: text }) + '\n');
     process.exit(0);
   } else {
     // All passed: silent exit 0
+    debugLog('passed (no violations)', debug);
     process.exit(0);
   }
 }
