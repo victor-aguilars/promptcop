@@ -1,5 +1,11 @@
 # promptocop
 
+## 0.1.4
+
+### Patch Changes
+
+- abadf0a: Add actionable directives
+
 ## 0.1.3
 
 ### Patch Changes
