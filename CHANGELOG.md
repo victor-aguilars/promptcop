@@ -1,5 +1,11 @@
 # promptocop
 
+## 0.1.3
+
+### Patch Changes
+
+- 2ce8720: feat: Enable conversation awareness
+
 ## 0.1.2
 
 ### Patch Changes
