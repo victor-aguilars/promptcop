@@ -1,13 +1,44 @@
 import chalk from 'chalk';
 import type { LintResult } from './types.js';
 
-export type FormatMode = 'default' | 'json' | 'compact';
+export type FormatMode = 'default' | 'json' | 'compact' | 'directive';
 
 const SEVERITY_ORDER = { error: 0, warn: 1, info: 2, off: 3 };
 
 export function format(results: LintResult[], mode: FormatMode, version = '0.1.0'): string {
   if (mode === 'json') {
     return JSON.stringify(results, null, 2);
+  }
+
+  if (mode === 'directive') {
+    const failures = results.filter((r) => !r.passed);
+    if (failures.length === 0) return '';
+
+    const groups: Record<string, string[]> = { error: [], warn: [], info: [] };
+    for (const r of failures) {
+      const text = r.directive ?? `${r.rule}: ${r.message ?? 'violation'}`;
+      if (r.severity === 'error' || r.severity === 'warn' || r.severity === 'info') {
+        groups[r.severity].push(text);
+      }
+    }
+
+    const PREAMBLES: Record<string, string> = {
+      error: 'STOP. Before proceeding, ask the user to clarify:',
+      warn: 'Proceed with the task, but mention these gaps in your response:',
+      info: 'After completing the task, consider suggesting:',
+    };
+
+    const sections: string[] = ['[promptocop] Prompt quality issues detected.'];
+    for (const severity of ['error', 'warn', 'info']) {
+      if (groups[severity].length > 0) {
+        sections.push('');
+        sections.push(PREAMBLES[severity]);
+        for (const item of groups[severity]) {
+          sections.push(`- ${item}`);
+        }
+      }
+    }
+    return sections.join('\n');
   }
 
   if (mode === 'compact') {

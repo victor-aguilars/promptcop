@@ -4,6 +4,7 @@ export interface RuleResult {
   passed: boolean;
   message?: string;
   line?: number;
+  matched?: string;
 }
 
 export interface Rule {
@@ -13,6 +14,7 @@ export interface Rule {
   check(prompt: string, options?: Record<string, unknown>): RuleResult;
   fix?(prompt: string, options?: Record<string, unknown>): string;
   explain(): string;
+  directive?(result: RuleResult): string;
 }
 
 export interface LintResult {
@@ -21,6 +23,11 @@ export interface LintResult {
   passed: boolean;
   message?: string;
   line?: number;
+  directive?: string;
+}
+
+export interface ContextConfig {
+  mode?: 'compact' | 'directive';
 }
 
 export interface PromptocopConfig {
@@ -29,4 +36,5 @@ export interface PromptocopConfig {
   options?: Record<string, Record<string, unknown>>;
   strict?: boolean;
   conversationAware?: boolean;
+  context?: ContextConfig;
 }

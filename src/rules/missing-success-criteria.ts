@@ -41,6 +41,10 @@ const missingSucessCriteria: Rule = {
     };
   },
 
+  directive(): string {
+    return 'What does "done" look like? Describe the expected outcome or how to verify success.';
+  },
+
   explain(): string {
     return `missing-success-criteria
 

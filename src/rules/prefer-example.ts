@@ -39,6 +39,10 @@ const preferExample: Rule = {
     };
   },
 
+  directive(): string {
+    return 'Adding a concrete example (input/output pair or before/after snippet) would improve accuracy.';
+  },
+
   explain(): string {
     return `prefer-example
 

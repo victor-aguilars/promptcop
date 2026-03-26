@@ -58,6 +58,10 @@ const contextDumpRisk: Rule = {
     return { passed: true };
   },
 
+  directive(): string {
+    return 'The pasted context is very large. Consider saving it to a file and referencing the path instead.';
+  },
+
   explain(): string {
     return `context-dump-risk
 

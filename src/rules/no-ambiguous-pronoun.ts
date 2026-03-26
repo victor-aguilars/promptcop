@@ -76,6 +76,7 @@ const noAmbiguousPronoun: Rule = {
             passed: false,
             message: `"${pronounMatch[0]}" has no clear referent — specify what you mean`,
             line: i + 1,
+            matched: pronounMatch[0],
           };
         }
       }
@@ -88,12 +89,18 @@ const noAmbiguousPronoun: Rule = {
             passed: false,
             message: `"${openingPronoun[0]}" at the start of the prompt has no referent`,
             line: 1,
+            matched: openingPronoun[0],
           };
         }
       }
     }
 
     return { passed: true };
+  },
+
+  directive(result): string {
+    const pronoun = result.matched ?? 'the pronoun';
+    return `What does "${pronoun}" refer to? Name the specific file, function, or concept.`;
   },
 
   explain(): string {

@@ -40,4 +40,16 @@ describe('no-ambiguous-pronoun', () => {
     expect(result.passed).toBe(false);
     expect(result.line).toBe(2);
   });
+
+  it('populates matched with the triggering pronoun', () => {
+    const result = noAmbiguousPronoun.check('fix it');
+    expect(result.matched).toBeDefined();
+    expect(result.matched!.toLowerCase()).toBe('it');
+  });
+
+  it('directive interpolates the matched pronoun', () => {
+    const result = noAmbiguousPronoun.check('fix it');
+    const msg = noAmbiguousPronoun.directive!(result);
+    expect(msg).toContain('"it"');
+  });
 });

@@ -65,4 +65,16 @@ describe('no-vague-verb', () => {
     expect(result.passed).toBe(false);
     expect(result.line).toBe(2);
   });
+
+  it('populates matched with the triggering verb', () => {
+    const result = noVagueVerb.check('fix the bug');
+    expect(result.matched).toBe('fix');
+  });
+
+  it('directive interpolates the matched verb', () => {
+    const result = noVagueVerb.check('refactor the code');
+    expect(result.matched).toBeDefined();
+    const msg = noVagueVerb.directive!(result);
+    expect(msg).toContain('"refactor"');
+  });
 });

@@ -31,6 +31,10 @@ const noFileContext: Rule = {
     };
   },
 
+  directive(): string {
+    return 'Which file or module is this about? Add a path or identifier to narrow scope.';
+  },
+
   explain(): string {
     return `no-file-context
 

@@ -23,7 +23,7 @@ describe('hook mode (default — non-blocking)', () => {
     expect(result.stdout.trim()).not.toBe('');
     const parsed = JSON.parse(result.stdout.trim()) as { additionalContext?: string };
     expect(parsed).toHaveProperty('additionalContext');
-    expect(parsed.additionalContext).toContain('no-vague-verb');
+    expect(parsed.additionalContext).toContain('fix');
   });
 
   it('writes nothing to stderr', () => {
@@ -54,7 +54,7 @@ describe('hook mode with --strict', () => {
   it('exits 2 and writes to stderr on errors', () => {
     const result = runHook('fix it', ['--strict']);
     expect(result.status).toBe(2);
-    expect(result.stderr).toContain('no-vague-verb');
+    expect(result.stderr).toContain('fix');
     expect(result.stdout).toBe('');
   });
 

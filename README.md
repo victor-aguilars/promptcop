@@ -131,6 +131,31 @@ This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`.
 
 Violations are surfaced as additional context — Claude sees the lint feedback alongside your prompt and can self-correct. The message is never blocked.
 
+By default, violations are formatted as **actionable directives** grouped by severity:
+
+```
+[promptocop] Prompt quality issues detected.
+
+STOP. Before proceeding, ask the user to clarify:
+- What specifically should be done? The verb "fix" is too vague without a target or goal.
+
+Proceed with the task, but mention these gaps in your response:
+- Which file or module is this about? Add a path or identifier to narrow scope.
+```
+
+| Severity | Claude behavior |
+|---|---|
+| `error` | Stop and ask the user to clarify before doing anything |
+| `warn` | Proceed, but mention the gaps in the response |
+| `info` | Complete the task, then suggest the improvement |
+
+To switch to compact violation labels instead, set in `.promptocop.yml`:
+
+```yaml
+context:
+  mode: compact
+```
+
 ### Strict mode (blocking)
 
 Enable `strict: true` in `.promptocop.yml` to block prompts with errors. Warnings remain non-blocking.

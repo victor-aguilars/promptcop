@@ -13,6 +13,7 @@ export function lint(prompt: string, config: PromptocopConfig, skipRules?: Set<s
 
     const ruleOptions = config.options?.[rule.name];
     const result = rule.check(prompt, ruleOptions);
+    const directive = (!result.passed && rule.directive) ? rule.directive(result) : undefined;
 
     results.push({
       rule: rule.name,
@@ -20,6 +21,7 @@ export function lint(prompt: string, config: PromptocopConfig, skipRules?: Set<s
       passed: result.passed,
       message: result.message,
       line: result.line,
+      directive,
     });
   }
 

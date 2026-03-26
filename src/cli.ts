@@ -8,7 +8,7 @@ import type { FormatMode } from './formatter.js';
 import { getRuleByName, rules } from './rules/index.js';
 import { loadConfig } from './config.js';
 import { classify, getLastAssistantMessage, FOLLOW_UP_SKIP_RULES } from './classifier.js';
-import type { LintResult } from './types.js';
+import type { LintResult, PromptocopConfig } from './types.js';
 
 const { version: VERSION } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
 
@@ -81,7 +81,7 @@ program
           }
           const fixedResults = lint(fixed, config, FOLLOW_UP_SKIP_RULES);
           if (options.hook) {
-            exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false));
+            exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config);
           }
           const output = format(fixedResults, formatMode, VERSION);
           if (output) console.log(output);
@@ -89,7 +89,7 @@ program
           process.exit(hasErrors ? 1 : 0);
         }
         if (options.hook) {
-          exitHookMode(results, VERSION, options.strict || (config.strict ?? false));
+          exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config);
         }
         const output = format(results, formatMode, VERSION);
         if (output) console.log(output);
@@ -110,7 +110,7 @@ program
       }
       const fixedResults = lint(fixed, config);
       if (options.hook) {
-        exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false));
+        exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config);
       }
       const output = format(fixedResults, formatMode, VERSION);
       if (output) console.log(output);
@@ -119,7 +119,7 @@ program
     }
 
     if (options.hook) {
-      exitHookMode(results, VERSION, options.strict || (config.strict ?? false));
+      exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config);
     }
 
     const output = format(results, formatMode, VERSION);
@@ -183,6 +183,9 @@ rules:
 #     additionalVerbs:
 #       - "touch"
 #       - "revisit"
+
+# context:
+#   mode: directive   # "directive" (default, actionable instructions for Claude) or "compact" (raw violation labels)
 `;
     writeFileSync('.promptocop.yml', template, 'utf8');
     console.log('Created .promptocop.yml');
@@ -208,18 +211,19 @@ program
       }),
   );
 
-function exitHookMode(results: LintResult[], version: string, strict: boolean): never {
+function exitHookMode(results: LintResult[], version: string, strict: boolean, config: PromptocopConfig): never {
   const hasErrors = results.some((r) => !r.passed && r.severity === 'error');
   const hasFailures = results.some((r) => !r.passed);
+  const formatMode: FormatMode = config.context?.mode === 'compact' ? 'compact' : 'directive';
 
   if (strict && hasErrors) {
     // Strict mode: block prompt, write violations to stderr, exit 2
-    const output = format(results, 'compact', version);
+    const output = format(results, formatMode, version);
     process.stderr.write(output + '\n');
     process.exit(2);
   } else if (hasFailures) {
     // Non-blocking: surface all violations as additionalContext, exit 0
-    const text = format(results, 'compact', version);
+    const text = format(results, formatMode, version);
     process.stdout.write(JSON.stringify({ additionalContext: text }) + '\n');
     process.exit(0);
   } else {

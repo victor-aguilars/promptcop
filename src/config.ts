@@ -18,6 +18,7 @@ function deepMergeConfigs(base: PromptocopConfig, override: PromptocopConfig): P
     },
     strict: override.strict ?? base.strict,
     conversationAware: override.conversationAware ?? base.conversationAware,
+    context: { ...base.context, ...override.context },
   };
 }
 

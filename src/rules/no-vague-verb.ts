@@ -68,6 +68,7 @@ const noVagueVerb: Rule = {
             passed: false,
             message: `"${match[0]}" needs a target, pattern, or goal`,
             line: i + 1,
+            matched: match[0],
           };
         }
       }
@@ -82,6 +83,11 @@ const noVagueVerb: Rule = {
     const pattern = buildVerbPattern(allVerbs);
 
     return prompt.replace(pattern, () => '[ACTION: <describe what and how>]');
+  },
+
+  directive(result): string {
+    const verb = result.matched ?? 'the action verb';
+    return `What specifically should be done? The verb "${verb}" is too vague without a target or goal.`;
   },
 
   explain(): string {

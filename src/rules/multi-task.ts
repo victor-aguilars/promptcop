@@ -74,6 +74,10 @@ const multiTask: Rule = {
     return prompt;
   },
 
+  directive(): string {
+    return 'This prompt contains multiple tasks. Consider sending them as separate prompts for better results.';
+  },
+
   explain(): string {
     return `multi-task
 
