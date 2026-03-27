@@ -125,9 +125,6 @@ program
     const template = `# Set to false to disable promptocop without removing the hook
 enabled: true
 
-# Set to true to suppress per-violation details from hook stderr output
-# silent: true
-
 extends:
   - promptocop:recommended
 
@@ -178,7 +175,7 @@ function exitHookMode(results: LintResult[], version: string, config: Promptocop
   const hasFailures = results.some((r) => !r.passed);
   const formatMode: FormatMode = config.context?.mode === 'compact' ? 'compact' : 'directive';
 
-  if (hasFailures && !config.silent) {
+  if (hasFailures) {
     const text = format(results, formatMode, version);
     process.stdout.write(text + '\n');
   }

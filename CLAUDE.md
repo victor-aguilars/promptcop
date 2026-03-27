@@ -203,9 +203,6 @@ Resolved from current directory upward (same as ESLint).
 # Set to false to disable promptocop without removing the hook
 enabled: true
 
-# Set to true to suppress per-violation details from hook output
-# silent: true
-
 extends:
   - promptocop:recommended
 
@@ -235,7 +232,6 @@ If no config is found, `promptocop:recommended` is used as the default.
 | Field | Type | Default | Description |
 |-------|------|---------|-------------|
 | `enabled` | boolean | `true` | Set to `false` to silently disable without removing the hook |
-| `silent` | boolean | `false` | Suppress violation details in hook output |
 | `extends` | string[] | `['promptocop:recommended']` | Preset(s) to extend |
 | `rules` | Record | — | Per-rule severity overrides |
 | `options` | Record | — | Per-rule configuration options |

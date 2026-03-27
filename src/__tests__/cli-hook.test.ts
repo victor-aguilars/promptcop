@@ -66,12 +66,4 @@ describe('hook mode (default — non-blocking)', () => {
     expect(result.stdout).toContain('fix');
   });
 
-  it('suppresses output when silent: true', () => {
-    const tmpDir = join(import.meta.dirname, '../../');
-    withConfig(tmpDir, 'silent: true\nextends:\n  - promptocop:recommended\n', () => {
-      const result = runHook('fix it', [], tmpDir);
-      expect(result.status).toBe(0);
-      expect(result.stdout.trim()).toBe('');
-    });
-  });
 });
