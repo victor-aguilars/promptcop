@@ -1,6 +1,6 @@
 {
   "name": "promptocop",
-  "version": "0.1.4",
+  "version": "0.2.0",
   "description": "A prompt linter for Claude Code — catches bad prompt patterns before they reach the model",
   "type": "module",
   "bin": {
