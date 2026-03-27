@@ -34,7 +34,7 @@ program
           const parsed = JSON.parse(rawInput) as { prompt?: string };
           prompt = parsed.prompt ?? '';
         } catch {
-          prompt = rawInput;
+          process.exit(0);
         }
       } else {
         prompt = rawInput;
@@ -50,13 +50,11 @@ program
     const config = loadConfig();
 
     if (config.enabled === false) {
-      if (options.hook) hookLog('disabled via config');
       process.exit(0);
     }
 
     const formatMode: FormatMode = options.hook ? 'compact' : (options.format as FormatMode);
 
-    if (options.hook) hookLog(`linting prompt (${prompt.length} chars)`);
     const results = lint(prompt, config);
 
     if (options.fix) {
@@ -176,34 +174,16 @@ program
       }),
   );
 
-function hookLog(message: string): void {
-  process.stderr.write(`[promptocop] ${message}\n`);
-}
-
 function exitHookMode(results: LintResult[], version: string, config: PromptocopConfig): never {
   const hasFailures = results.some((r) => !r.passed);
   const formatMode: FormatMode = config.context?.mode === 'compact' ? 'compact' : 'directive';
 
   if (hasFailures) {
     const text = format(results, formatMode, version);
-    const errorCount = results.filter((r) => !r.passed && r.severity === 'error').length;
-    const warnCount = results.filter((r) => !r.passed && r.severity === 'warn').length;
-    const parts = [];
-    if (errorCount) parts.push(`${errorCount} error${errorCount !== 1 ? 's' : ''}`);
-    if (warnCount) parts.push(`${warnCount} warning${warnCount !== 1 ? 's' : ''}`);
-    hookLog(`${parts.join(', ')} — injected as context`);
-    if (!config.silent) {
-      for (const r of results.filter((r) => !r.passed)) {
-        const icon = r.severity === 'error' ? '✖' : r.severity === 'warn' ? '⚠' : 'ℹ';
-        hookLog(`  ${icon} ${r.rule}${r.message ? `: ${r.message}` : ''}`);
-      }
-    }
-    process.stdout.write(JSON.stringify({ additionalContext: text }) + '\n');
-    process.exit(0);
-  } else {
-    hookLog('passed (no violations)');
-    process.exit(0);
+    process.stdout.write(text + '\n');
   }
+
+  process.exit(0);
 }
 
 function readStdin(): Promise<string> {
