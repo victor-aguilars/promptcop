@@ -3,7 +3,7 @@ import { dirname, join } from 'node:path';
 import { homedir } from 'node:os';
 
 const SETTINGS_PATH = join(homedir(), '.claude', 'settings.json');
-const HOOK_COMMAND = 'npx promptocop@latest lint --hook --debug -';
+const HOOK_COMMAND = 'npx promptocop@latest lint --hook -';
 const HOOK_MARKER = 'promptocop';
 
 interface HookEntry {

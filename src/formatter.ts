@@ -23,12 +23,12 @@ export function format(results: LintResult[], mode: FormatMode, version = '0.1.0
     }
 
     const PREAMBLES: Record<string, string> = {
-      error: 'STOP. Before proceeding, ask the user to clarify:',
-      warn: 'Proceed with the task, but mention these gaps in your response:',
-      info: 'After completing the task, consider suggesting:',
+      error: 'Likely to cause problems without clarification (ask the user if unclear):',
+      warn: 'May reduce response quality (mention if relevant):',
+      info: 'Optional improvements the user could consider:',
     };
 
-    const sections: string[] = ['[promptocop] Prompt quality issues detected.'];
+    const sections: string[] = ["[promptocop] The user's prompt was flagged by a prompt linter. Below are potential gaps — if any are not already resolved by conversation context, factor them into your response."];
     for (const severity of ['error', 'warn', 'info']) {
       if (groups[severity].length > 0) {
         sections.push('');

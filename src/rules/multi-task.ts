@@ -75,7 +75,7 @@ const multiTask: Rule = {
   },
 
   directive(): string {
-    return 'This prompt contains multiple tasks. Consider sending them as separate prompts for better results.';
+    return 'Multiple independent tasks were detected. Handling them sequentially may improve results.';
   },
 
   explain(): string {

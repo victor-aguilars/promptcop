@@ -7,7 +7,7 @@ const errorResult: LintResult = {
   severity: 'error',
   passed: false,
   message: '"fix" needs a target, pattern, or goal',
-  directive: 'What specifically should be done? The verb "fix" is too vague without a target or goal.',
+  directive: 'The verb "fix" may be too vague without a specific target or goal.',
 };
 
 const warnResult: LintResult = {
@@ -15,7 +15,7 @@ const warnResult: LintResult = {
   severity: 'warn',
   passed: false,
   message: 'No file or code reference found',
-  directive: 'Which file or module is this about? Add a path or identifier to narrow scope.',
+  directive: 'No file path or module identifier was detected in the prompt.',
 };
 
 const infoResult: LintResult = {
@@ -23,7 +23,7 @@ const infoResult: LintResult = {
   severity: 'info',
   passed: false,
   message: 'No example found',
-  directive: 'Adding a concrete example (input/output pair or before/after snippet) would improve accuracy.',
+  directive: 'No concrete example (input/output pair, before/after snippet) was detected in the prompt.',
 };
 
 const passResult: LintResult = {
@@ -43,35 +43,35 @@ describe('format — directive mode', () => {
     expect(output).toContain('[promptocop]');
   });
 
-  it('groups errors under STOP preamble', () => {
+  it('groups errors under clarification preamble', () => {
     const output = format([errorResult], 'directive');
-    expect(output).toContain('STOP. Before proceeding, ask the user to clarify:');
-    expect(output).toContain('- What specifically should be done?');
+    expect(output).toContain('Likely to cause problems without clarification (ask the user if unclear):');
+    expect(output).toContain('- The verb "fix" may be too vague');
   });
 
-  it('groups warnings under proceed preamble', () => {
+  it('groups warnings under quality preamble', () => {
     const output = format([warnResult], 'directive');
-    expect(output).toContain('Proceed with the task, but mention these gaps');
-    expect(output).toContain('- Which file or module is this about?');
+    expect(output).toContain('May reduce response quality (mention if relevant):');
+    expect(output).toContain('- No file path or module identifier');
   });
 
-  it('groups info under after-task preamble', () => {
+  it('groups info under optional preamble', () => {
     const output = format([infoResult], 'directive');
-    expect(output).toContain('After completing the task, consider suggesting:');
-    expect(output).toContain('- Adding a concrete example');
+    expect(output).toContain('Optional improvements the user could consider:');
+    expect(output).toContain('- No concrete example');
   });
 
   it('omits sections with no violations', () => {
     const output = format([errorResult], 'directive');
-    expect(output).not.toContain('Proceed with the task');
-    expect(output).not.toContain('After completing the task');
+    expect(output).not.toContain('May reduce response quality');
+    expect(output).not.toContain('Optional improvements');
   });
 
   it('includes all three sections when all severities present', () => {
     const output = format([errorResult, warnResult, infoResult], 'directive');
-    expect(output).toContain('STOP.');
-    expect(output).toContain('Proceed with the task');
-    expect(output).toContain('After completing the task');
+    expect(output).toContain('Likely to cause problems');
+    expect(output).toContain('May reduce response quality');
+    expect(output).toContain('Optional improvements');
   });
 
   it('falls back to rule:message when directive is absent', () => {

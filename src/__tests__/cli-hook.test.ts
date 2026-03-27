@@ -26,9 +26,9 @@ describe('hook mode (default — non-blocking)', () => {
     expect(parsed.additionalContext).toContain('fix');
   });
 
-  it('writes nothing to stderr', () => {
+  it('writes status to stderr', () => {
     const result = runHook('fix it');
-    expect(result.stderr).toBe('');
+    expect(result.stderr).toContain('[promptocop]');
   });
 
   it('exits 0 when rules only produce info/warn (never blocks)', () => {
@@ -37,7 +37,6 @@ describe('hook mode (default — non-blocking)', () => {
       'Add debug logging to src/auth.ts so that each failed login attempt logs the username and timestamp. Do not log passwords.',
     );
     expect(result.status).toBe(0);
-    expect(result.stderr).toBe('');
   });
 
   it('handles raw string stdin (non-JSON fallback) without crashing', () => {
@@ -79,6 +78,5 @@ describe('hook mode with --strict', () => {
       ['--strict'],
     );
     expect(result.status).toBe(0);
-    expect(result.stderr).toBe('');
   });
 });

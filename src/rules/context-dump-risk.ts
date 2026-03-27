@@ -59,7 +59,7 @@ const contextDumpRisk: Rule = {
   },
 
   directive(): string {
-    return 'The pasted context is very large. Consider saving it to a file and referencing the path instead.';
+    return 'The prompt contains a large amount of pasted context, which may dilute the core request.';
   },
 
   explain(): string {

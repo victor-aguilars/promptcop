@@ -42,7 +42,7 @@ const missingSucessCriteria: Rule = {
   },
 
   directive(): string {
-    return 'What does "done" look like? Describe the expected outcome or how to verify success.';
+    return 'No success criteria or expected outcome was detected in the prompt.';
   },
 
   explain(): string {

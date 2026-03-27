@@ -14,9 +14,6 @@ rules:
 # Uncomment to block prompts with errors when used as a Claude Code hook:
 # strict: true
 
-# Uncomment to disable conversation-aware classification (confirmations and follow-ups):
-# conversationAware: false
-
 # Uncomment to add project-specific vague verbs:
 # options:
 #   no-vague-verb:
