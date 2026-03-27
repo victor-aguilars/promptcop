@@ -1,15 +1,27 @@
 import { describe, it, expect } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { join } from 'node:path';
+import { writeFileSync, unlinkSync, existsSync } from 'node:fs';
 
 const CLI = join(import.meta.dirname, '../../dist/cli.js');
 
-function runHook(prompt: string, extraArgs: string[] = []) {
+function runHook(prompt: string, extraArgs: string[] = [], cwd?: string) {
   const input = JSON.stringify({ prompt });
   return spawnSync('node', [CLI, 'lint', '--hook', ...extraArgs, '-'], {
     input,
     encoding: 'utf8',
+    cwd,
   });
+}
+
+function withConfig(dir: string, yaml: string, fn: () => void) {
+  const path = join(dir, '.promptocop.yml');
+  writeFileSync(path, yaml, 'utf8');
+  try {
+    fn();
+  } finally {
+    if (existsSync(path)) unlinkSync(path);
+  }
 }
 
 describe('hook mode (default — non-blocking)', () => {
@@ -18,12 +30,11 @@ describe('hook mode (default — non-blocking)', () => {
     expect(result.status).toBe(0);
   });
 
-  it('writes JSON additionalContext to stdout on violations', () => {
+  it('writes directive text to stdout on violations', () => {
     const result = runHook('fix it');
     expect(result.stdout.trim()).not.toBe('');
-    const parsed = JSON.parse(result.stdout.trim()) as { additionalContext?: string };
-    expect(parsed).toHaveProperty('additionalContext');
-    expect(parsed.additionalContext).toContain('fix');
+    expect(result.stdout).toContain('[promptocop]');
+    expect(result.stdout).toContain('fix');
   });
 
   it('writes nothing to stderr', () => {
@@ -37,7 +48,6 @@ describe('hook mode (default — non-blocking)', () => {
       'Add debug logging to src/auth.ts so that each failed login attempt logs the username and timestamp. Do not log passwords.',
     );
     expect(result.status).toBe(0);
-    expect(result.stderr).toBe('');
   });
 
   it('handles raw string stdin (non-JSON fallback) without crashing', () => {
@@ -48,37 +58,12 @@ describe('hook mode (default — non-blocking)', () => {
     expect(result.status).toBeDefined();
     expect(result.status).not.toBeNull();
   });
-});
 
-describe('hook mode with --strict', () => {
-  it('exits 2 and writes to stderr on errors', () => {
-    const result = runHook('fix it', ['--strict']);
-    expect(result.status).toBe(2);
-    expect(result.stderr).toContain('fix');
-    expect(result.stdout).toBe('');
+  it('prints directive violation details to stdout by default', () => {
+    const result = runHook('fix it');
+    // Directive text includes the vague verb and [promptocop] preamble
+    expect(result.stdout).toContain('[promptocop]');
+    expect(result.stdout).toContain('fix');
   });
 
-  it('exits 2 (not 1) — correct exit code for Claude Code blocking', () => {
-    const result = runHook('refactor everything', ['--strict']);
-    expect(result.status).toBe(2);
-    expect(result.status).not.toBe(1);
-  });
-
-  it('exits 0 with JSON additionalContext for warnings only', () => {
-    const result = runHook('Add logging to the auth service', ['--strict']);
-    expect(result.status).toBe(0);
-    if (result.stdout.trim()) {
-      const parsed = JSON.parse(result.stdout.trim()) as { additionalContext?: string };
-      expect(parsed).toHaveProperty('additionalContext');
-    }
-  });
-
-  it('exits 0 and does not block when rules only produce info/warn', () => {
-    const result = runHook(
-      'Add debug logging to src/auth.ts so that each failed login attempt logs the username and timestamp. Do not log passwords.',
-      ['--strict'],
-    );
-    expect(result.status).toBe(0);
-    expect(result.stderr).toBe('');
-  });
 });

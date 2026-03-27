@@ -11,5 +11,4 @@ export const recommended: PromptocopConfig = {
     'context-dump-risk': 'warn',
     'prefer-example': 'info',
   },
-  conversationAware: true,
 };

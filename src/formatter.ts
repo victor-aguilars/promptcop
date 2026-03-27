@@ -1,7 +1,7 @@
 import chalk from 'chalk';
 import type { LintResult } from './types.js';
 
-export type FormatMode = 'default' | 'json' | 'compact' | 'directive';
+export type FormatMode = 'default' | 'json' | 'compact' | 'directive' | 'reason';
 
 const SEVERITY_ORDER = { error: 0, warn: 1, info: 2, off: 3 };
 
@@ -23,12 +23,17 @@ export function format(results: LintResult[], mode: FormatMode, version = '0.1.0
     }
 
     const PREAMBLES: Record<string, string> = {
-      error: 'STOP. Before proceeding, ask the user to clarify:',
-      warn: 'Proceed with the task, but mention these gaps in your response:',
-      info: 'After completing the task, consider suggesting:',
+      error: 'MUST clarify before acting:',
+      warn: 'Mention to the user if not obvious from context:',
+      info: 'Suggest if relevant:',
     };
 
-    const sections: string[] = ['[promptocop] Prompt quality issues detected.'];
+    const hasErrors = groups['error'].length > 0;
+    const preamble = hasErrors
+      ? "[promptocop] The user's prompt is missing critical information. DO NOT guess or investigate autonomously — ask the user to clarify the items marked MUST below before proceeding."
+      : "[promptocop] The user's prompt may be underspecified. Factor the items below into your response — mention gaps to the user where relevant.";
+
+    const sections: string[] = [preamble];
     for (const severity of ['error', 'warn', 'info']) {
       if (groups[severity].length > 0) {
         sections.push('');

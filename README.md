@@ -5,29 +5,62 @@
   </picture>
 </div>
 
-A prompt linter for Claude Code. Catches bad prompt patterns before they reach the model — like ESLint, but for the things you type.
+A prompt linter for Claude Code. Analyzes your prompts for anti-patterns and surfaces issues as context for the model — like ESLint, but for the things you type.
 
 ---
 
-## Quick start
+## Setup with Claude Code
 
-No install required:
+Install the hook and every prompt you send gets linted automatically:
+
+```bash
+npx promptocop hook install
+```
+
+This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`. When a prompt has issues, the lint results are injected as context so Claude can factor them into its response — nothing is blocked by default.
+
+To remove:
+
+```bash
+npx promptocop hook uninstall
+```
+
+### How it works
+
+Violations are surfaced as advisory metadata alongside your prompt. Claude sees the findings and decides what to act on based on conversation context:
+
+```
+[promptocop] The user's prompt was flagged by a prompt linter. Below are
+potential gaps — if any are not already resolved by conversation context,
+factor them into your response.
+
+Likely to cause problems without clarification (ask the user if unclear):
+- The verb "fix" may be too vague without a specific target or goal.
+
+May reduce response quality (mention if relevant):
+- No file path or module identifier was detected in the prompt.
+```
+
+| Severity | Behavior |
+|---|---|
+| `error` | Ask the user to clarify if not already clear from conversation |
+| `warn` | Mention gaps if relevant to the response |
+| `info` | Suggest improvements the user could consider |
+
+---
+
+## Standalone CLI
+
+You can also run promptocop directly without the hook:
 
 ```bash
 npx promptocop lint "refactor the auth module"
 ```
 
-For regular use, install globally:
-
-```bash
-npm install -g promptocop
-promptocop lint "refactor the auth module"
-```
-
 **Example output:**
 
 ```
-promptocop v0.1.1
+promptocop v0.1.3
 
 ✖ error   no-vague-verb                "refactor" needs a target, pattern, or goal
 ⚠ warning no-constraints               No constraints specified — consider adding limits, requirements, or restrictions
@@ -39,6 +72,23 @@ promptocop v0.1.1
 ✓ pass   prefer-example
 
 1 error, 1 warning — run with --fix to attempt auto-fix
+```
+
+```bash
+# Lint from stdin
+echo "fix the bug" | promptocop lint -
+
+# Auto-fix — rewrites the prompt with placeholders where vague
+promptocop lint "refactor the auth module" --fix
+
+# JSON output (for scripting/tooling)
+promptocop lint "your prompt" --format json
+
+# List all rules with severities
+promptocop rules
+
+# Explain a rule
+promptocop explain no-vague-verb
 ```
 
 ---
@@ -60,33 +110,6 @@ Run `promptocop explain <rule>` for details on any rule.
 
 ---
 
-## Usage
-
-```bash
-# Lint a prompt string
-promptocop lint "your prompt here"
-
-# Lint from stdin
-echo "fix the bug" | promptocop lint -
-
-# Auto-fix — rewrites the prompt with placeholders where vague
-promptocop lint "refactor the auth module" --fix
-
-# JSON output (for scripting/tooling)
-promptocop lint "your prompt" --format json
-
-# List all rules with severities
-promptocop rules
-
-# Explain a rule
-promptocop explain no-vague-verb
-
-# Create a .promptocop.yml config in the current directory
-promptocop init
-```
-
----
-
 ## Configuration
 
 Create a `.promptocop.yml` (or run `promptocop init`):
@@ -100,12 +123,6 @@ rules:
   missing-success-criteria: off   # disable a rule
   prefer-example: warn            # change severity
 
-# Block prompts with errors when used as a Claude Code hook:
-# strict: true
-
-# Disable conversation-aware classification:
-# conversationAware: false
-
 options:
   no-vague-verb:
     additionalVerbs:
@@ -115,72 +132,11 @@ options:
 
 Config is resolved upward from the current directory, the same way ESLint does it. If no config is found, `promptocop:recommended` is used.
 
----
-
-## Claude Code hook
-
-Wire promptocop into Claude Code so it lints every prompt automatically before sending:
-
-```bash
-promptocop hook install
-```
-
-This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`.
-
-### Default mode (non-blocking)
-
-Violations are surfaced as additional context — Claude sees the lint feedback alongside your prompt and can self-correct. The message is never blocked.
-
-By default, violations are formatted as **actionable directives** grouped by severity:
-
-```
-[promptocop] Prompt quality issues detected.
-
-STOP. Before proceeding, ask the user to clarify:
-- What specifically should be done? The verb "fix" is too vague without a target or goal.
-
-Proceed with the task, but mention these gaps in your response:
-- Which file or module is this about? Add a path or identifier to narrow scope.
-```
-
-| Severity | Claude behavior |
-|---|---|
-| `error` | Stop and ask the user to clarify before doing anything |
-| `warn` | Proceed, but mention the gaps in the response |
-| `info` | Complete the task, then suggest the improvement |
-
-To switch to compact violation labels instead, set in `.promptocop.yml`:
+To switch hook output to compact violation labels instead of advisory directives:
 
 ```yaml
 context:
   mode: compact
-```
-
-### Strict mode (blocking)
-
-Enable `strict: true` in `.promptocop.yml` to block prompts with errors. Warnings remain non-blocking.
-
-```yaml
-# .promptocop.yml
-strict: true
-```
-
-### Conversation-aware classification
-
-The hook is smart about conversational replies that would generate false positives:
-
-| Message type | Example | Behavior |
-|---|---|---|
-| Confirmation | "yes", "sounds good", "go ahead" | Skipped entirely |
-| Follow-up | "now continue with authorization" | Context rules skipped |
-| Standalone | "refactor src/auth.ts to use JWT" | Full lint |
-
-The classifier reads the conversation transcript to improve accuracy — if Claude asked you a question and your reply is short, it's treated as a confirmation automatically.
-
-To remove the hook:
-
-```bash
-promptocop hook uninstall
 ```
 
 ---

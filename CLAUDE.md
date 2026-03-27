@@ -1,6 +1,6 @@
 # promptocop
 
-A prompt linter for Claude Code. Catches bad prompt patterns before they reach the model — like ESLint, but for the things you type at Claude.
+A prompt linter for Claude Code. Analyzes your prompts for anti-patterns and surfaces issues as context for the model — like ESLint, but for the things you type at Claude.
 
 ---
 
@@ -34,10 +34,13 @@ promptocop/
 │   ├── cli.ts              # Entry point, commander setup
 │   ├── linter.ts           # Core lint runner — loads rules, runs them, collects results
 │   ├── config.ts           # .promptocop.yml loader and resolver
-│   ├── formatter.ts        # Output formatting (default, json, compact)
+│   ├── formatter.ts        # Output formatting (default, json, compact, directive)
 │   ├── fixer.ts            # --fix mode: applies auto-fixes to prompt
+│   ├── types.ts            # Shared TypeScript interfaces (Rule, RuleResult, LintResult, etc.)
+│   ├── __tests__/          # Integration tests (cli-hook, config, formatter)
 │   ├── rules/
-│   │   ├── index.ts        # Rule registry
+│   │   ├── index.ts        # Rule registry + getRuleByName helper
+│   │   ├── __tests__/      # Per-rule unit tests
 │   │   ├── no-vague-verb.ts
 │   │   ├── no-ambiguous-pronoun.ts
 │   │   ├── no-file-context.ts
@@ -50,7 +53,6 @@ promptocop/
 │   │   └── recommended.ts  # Default ruleset and severities
 │   └── hook/
 │       └── install.ts      # Claude Code hook installer
-├── .promptocop.yml          # Example config (used for dogfooding)
 ├── CLAUDE.md               # This file
 ├── package.json
 ├── tsconfig.json
@@ -63,24 +65,28 @@ promptocop/
 
 ### Rule interface
 
-Every rule implements this interface:
+All shared types live in `src/types.ts`. Every rule implements:
 
 ```ts
 interface Rule {
   name: string;
   description: string;
   severity: 'error' | 'warn' | 'info';  // default, overridable via config
-  check(prompt: string): RuleResult;
-  fix?(prompt: string): string;          // optional auto-fix
+  check(prompt: string, options?: Record<string, unknown>): RuleResult;
+  fix?(prompt: string, options?: Record<string, unknown>): string;  // optional auto-fix
   explain(): string;                     // shown by `promptocop explain <rule>`
+  directive?(result: RuleResult): string; // actionable instruction injected as Claude context
 }
 
 interface RuleResult {
   passed: boolean;
   message?: string;   // human-readable explanation of the violation
   line?: number;      // if prompt is multiline, which line triggered it
+  matched?: string;   // the specific text that triggered the rule (e.g. the vague verb)
 }
 ```
+
+`directive()` is called when a rule fails in hook mode. Its return value is surfaced to Claude as a precise, actionable instruction (e.g. "Ask the user what specifically should be refactored and why"). Rules without `directive()` fall back to `"ruleName: message"`.
 
 ### Severity levels
 
@@ -91,7 +97,7 @@ interface RuleResult {
 | `info` | Style or efficiency suggestion. |
 | `off` | Rule disabled. |
 
-### Rules to implement (v1)
+### Implemented rules (v1)
 
 | Rule | Severity | Auto-fix |
 |------|----------|----------|
@@ -149,7 +155,9 @@ promptocop init
 
 ---
 
-## Output format (default)
+## Output formats
+
+### Default (terminal use)
 
 ```
 promptocop v0.1.0
@@ -163,6 +171,28 @@ promptocop v0.1.0
 2 errors, 2 warnings — run with --fix to attempt auto-fix
 ```
 
+### Directive (hook mode default)
+
+Used when `--hook` is passed. Written to stdout so Claude Code injects it as context before responding.
+
+```
+[promptocop] The user's prompt is missing critical information. DO NOT guess or investigate autonomously — ask the user to clarify the items marked MUST below before proceeding.
+
+MUST clarify before acting:
+- Ask the user what specifically should be refactored and what the goal is (e.g. readability, performance, structure)
+
+Mention to the user if not obvious from context:
+- No file or code reference found — ask which file or component to focus on
+```
+
+### Compact (hook fallback, `--format compact`)
+
+One violation per line — `severity: rule: message`. Selected in hook mode when `context.mode: compact` is set in config.
+
+### JSON (`--format json`)
+
+Pretty-printed array of `LintResult` objects.
+
 ---
 
 ## Config file (.promptocop.yml)
@@ -170,6 +200,9 @@ promptocop v0.1.0
 Resolved from current directory upward (same as ESLint).
 
 ```yaml
+# Set to false to disable promptocop without removing the hook
+enabled: true
+
 extends:
   - promptocop:recommended
 
@@ -186,9 +219,23 @@ options:
     additionalVerbs:
       - "touch"
       - "revisit"
+
+# Hook context output format: "directive" (default) or "compact"
+# context:
+#   mode: directive
 ```
 
 If no config is found, `promptocop:recommended` is used as the default.
+
+### Config fields
+
+| Field | Type | Default | Description |
+|-------|------|---------|-------------|
+| `enabled` | boolean | `true` | Set to `false` to silently disable without removing the hook |
+| `extends` | string[] | `['promptocop:recommended']` | Preset(s) to extend |
+| `rules` | Record | — | Per-rule severity overrides |
+| `options` | Record | — | Per-rule configuration options |
+| `context.mode` | `'directive'` \| `'compact'` | `'directive'` | Hook output format |
 
 ---
 
@@ -203,16 +250,15 @@ Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under 
 
 ### Hook behavior
 
-`UserPromptSubmit` fires *after* the user presses Enter — there is no pre-submit hook in Claude Code. Because forcing a user to retype/resubmit their prompt is disruptive, the default mode is **non-blocking**.
+`UserPromptSubmit` fires *after* the user presses Enter. The hook is **always non-blocking** — it never prevents a prompt from being sent. Instead it injects lint feedback as context that Claude sees before it starts responding.
 
-**Default mode (no `--strict`):**
-- Any violations → writes `{ "additionalContext": "..." }` JSON to stdout, exits 0 — Claude sees the lint feedback as context before responding, but the prompt is never blocked
-- All pass → exits 0 silently
+**Behavior:**
+- Violations found → writes formatted violations to stdout, exits 0. Claude Code injects this as context.
+- All pass (or `enabled: false`) → exits 0 silently, nothing injected.
 
-**Strict mode (`--strict` flag or `strict: true` in `.promptocop.yml`):**
-- Errors found → writes compact violations to stderr, exits 2 — Claude Code blocks the send
-- Warnings only → writes `{ "additionalContext": "..." }` JSON to stdout, exits 0 (non-blocking)
-- All pass → exits 0 silently
+The output format is controlled by `context.mode` in `.promptocop.yml`:
+- `directive` (default) — LLM-targeted instructions with severity-specific preambles, uses `rule.directive()` output
+- `compact` — one violation per line (`severity: rule: message`)
 
 ### Hook config shape (written into settings.json)
 
@@ -232,12 +278,6 @@ Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under 
     ]
   }
 }
-```
-
-To enable strict mode without editing the hook command, add to your `.promptocop.yml`:
-
-```yaml
-strict: true
 ```
 
 ---
@@ -287,13 +327,12 @@ promptocop lint "refactor the auth module" --ai
 - [x] Project scaffold (package.json, tsconfig, vitest config)
 - [x] Core rule interface and linter runner
 - [x] Config loader
-- [x] First rule: `no-vague-verb`
-- [x] CLI entry point with `lint` command
-- [x] Default formatter
-- [x] Remaining v1 rules
+- [x] All v1 rules (8 rules)
+- [x] CLI entry point with all commands (`lint`, `explain`, `rules`, `init`, `hook`)
+- [x] Default + compact + JSON + directive formatters
 - [x] `--fix` mode
-- [x] `explain` command
-- [x] Hook installer
+- [x] Hook installer / uninstaller
 - [x] `promptocop:recommended` preset
+- [x] `directive()` method on rules — LLM-targeted context injection in hook mode
 - [ ] README
 - [ ] npm publish setup

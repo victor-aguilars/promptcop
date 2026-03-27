@@ -7,7 +7,6 @@ import { format } from './formatter.js';
 import type { FormatMode } from './formatter.js';
 import { getRuleByName, rules } from './rules/index.js';
 import { loadConfig } from './config.js';
-import { classify, getLastAssistantMessage, FOLLOW_UP_SKIP_RULES } from './classifier.js';
 import type { LintResult, PromptocopConfig } from './types.js';
 
 const { version: VERSION } = JSON.parse(readFileSync(new URL('../package.json', import.meta.url), 'utf8')) as { version: string };
@@ -24,21 +23,18 @@ program
   .description('Lint a prompt string (use - to read from stdin)')
   .option('--fix', 'Apply auto-fixes and show rewritten prompt')
   .option('--format <mode>', 'Output format: default, json, compact', 'default')
-  .option('--hook', 'Hook mode: lint results injected as context (non-blocking by default)')
-  .option('--strict', 'Strict hook mode: block prompts with errors (requires --hook)')
-  .action(async (promptArg: string | undefined, options: { fix: boolean; format: string; hook: boolean; strict: boolean }) => {
+  .option('--hook', 'Hook mode: lint results injected as context (non-blocking)')
+  .action(async (promptArg: string | undefined, options: { fix: boolean; format: string; hook: boolean }) => {
     let prompt: string;
-    let transcriptPath: string | undefined;
 
     if (promptArg === '-' || promptArg === undefined) {
       const rawInput = await readStdin();
       if (options.hook) {
         try {
-          const parsed = JSON.parse(rawInput) as { prompt?: string; transcript_path?: string };
+          const parsed = JSON.parse(rawInput) as { prompt?: string };
           prompt = parsed.prompt ?? '';
-          transcriptPath = parsed.transcript_path;
         } catch {
-          prompt = rawInput;
+          process.exit(0);
         }
       } else {
         prompt = rawInput;
@@ -51,52 +47,13 @@ program
       process.exit(0);
     }
 
-    const formatMode: FormatMode = options.hook ? 'compact' : (options.format as FormatMode);
     const config = loadConfig();
-    const conversationAware = config.conversationAware ?? true;
 
-    if (conversationAware) {
-      const lastAssistant = options.hook && transcriptPath
-        ? getLastAssistantMessage(transcriptPath)
-        : undefined;
-      const promptClass = classify(prompt, lastAssistant ?? undefined);
-
-      if (promptClass === 'confirmation') {
-        if (options.hook) {
-          process.exit(0);
-        }
-        console.log('Prompt classified as a confirmation — nothing to lint.');
-        process.exit(0);
-      }
-
-      if (promptClass === 'follow-up') {
-        const results = lint(prompt, config, FOLLOW_UP_SKIP_RULES);
-        if (options.fix) {
-          const { applyFixes } = await import('./fixer.js');
-          const fixed = applyFixes(prompt, results, rules, config);
-          if (!options.hook) {
-            console.log('\nFixed prompt:\n');
-            console.log(fixed);
-            console.log('\nRe-linting fixed prompt:\n');
-          }
-          const fixedResults = lint(fixed, config, FOLLOW_UP_SKIP_RULES);
-          if (options.hook) {
-            exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config);
-          }
-          const output = format(fixedResults, formatMode, VERSION);
-          if (output) console.log(output);
-          const hasErrors = fixedResults.some((r) => !r.passed && r.severity === 'error');
-          process.exit(hasErrors ? 1 : 0);
-        }
-        if (options.hook) {
-          exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config);
-        }
-        const output = format(results, formatMode, VERSION);
-        if (output) console.log(output);
-        const hasErrors = results.some((r) => !r.passed && r.severity === 'error');
-        process.exit(hasErrors ? 1 : 0);
-      }
+    if (config.enabled === false) {
+      process.exit(0);
     }
+
+    const formatMode: FormatMode = options.hook ? 'compact' : (options.format as FormatMode);
 
     const results = lint(prompt, config);
 
@@ -110,7 +67,7 @@ program
       }
       const fixedResults = lint(fixed, config);
       if (options.hook) {
-        exitHookMode(fixedResults, VERSION, options.strict || (config.strict ?? false), config);
+        exitHookMode(fixedResults, VERSION, config);
       }
       const output = format(fixedResults, formatMode, VERSION);
       if (output) console.log(output);
@@ -119,7 +76,7 @@ program
     }
 
     if (options.hook) {
-      exitHookMode(results, VERSION, options.strict || (config.strict ?? false), config);
+      exitHookMode(results, VERSION, config);
     }
 
     const output = format(results, formatMode, VERSION);
@@ -165,7 +122,10 @@ program
       console.error('.promptocop.yml already exists');
       process.exit(1);
     }
-    const template = `extends:
+    const template = `# Set to false to disable promptocop without removing the hook
+enabled: true
+
+extends:
   - promptocop:recommended
 
 rules:
@@ -211,25 +171,16 @@ program
       }),
   );
 
-function exitHookMode(results: LintResult[], version: string, strict: boolean, config: PromptocopConfig): never {
-  const hasErrors = results.some((r) => !r.passed && r.severity === 'error');
+function exitHookMode(results: LintResult[], version: string, config: PromptocopConfig): never {
   const hasFailures = results.some((r) => !r.passed);
   const formatMode: FormatMode = config.context?.mode === 'compact' ? 'compact' : 'directive';
 
-  if (strict && hasErrors) {
-    // Strict mode: block prompt, write violations to stderr, exit 2
-    const output = format(results, formatMode, version);
-    process.stderr.write(output + '\n');
-    process.exit(2);
-  } else if (hasFailures) {
-    // Non-blocking: surface all violations as additionalContext, exit 0
+  if (hasFailures) {
     const text = format(results, formatMode, version);
-    process.stdout.write(JSON.stringify({ additionalContext: text }) + '\n');
-    process.exit(0);
-  } else {
-    // All passed: silent exit 0
-    process.exit(0);
+    process.stdout.write(text + '\n');
   }
+
+  process.exit(0);
 }
 
 function readStdin(): Promise<string> {

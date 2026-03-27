@@ -1,7 +1,7 @@
 import type { LintResult, PromptocopConfig, Severity } from './types.js';
 import { rules } from './rules/index.js';
 
-export function lint(prompt: string, config: PromptocopConfig, skipRules?: Set<string>): LintResult[] {
+export function lint(prompt: string, config: PromptocopConfig): LintResult[] {
   const results: LintResult[] = [];
 
   for (const rule of rules) {
@@ -9,7 +9,6 @@ export function lint(prompt: string, config: PromptocopConfig, skipRules?: Set<s
     const severity: Severity = configuredSeverity ?? rule.severity;
 
     if (severity === 'off') continue;
-    if (skipRules?.has(rule.name)) continue;
 
     const ruleOptions = config.options?.[rule.name];
     const result = rule.check(prompt, ruleOptions);

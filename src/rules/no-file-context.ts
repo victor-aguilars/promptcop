@@ -32,7 +32,7 @@ const noFileContext: Rule = {
   },
 
   directive(): string {
-    return 'Which file or module is this about? Add a path or identifier to narrow scope.';
+    return 'Ask the user which file(s) or module(s) they are referring to.';
   },
 
   explain(): string {

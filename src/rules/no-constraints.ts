@@ -32,7 +32,7 @@ const noConstraints: Rule = {
   },
 
   directive(): string {
-    return 'Are there any constraints? Mention limits, requirements, or things to avoid.';
+    return 'Note to the user that no constraints were specified — ask if there are any limits, requirements, or restrictions to follow.';
   },
 
   explain(): string {

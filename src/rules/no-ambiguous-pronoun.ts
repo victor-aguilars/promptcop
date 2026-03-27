@@ -100,7 +100,7 @@ const noAmbiguousPronoun: Rule = {
 
   directive(result): string {
     const pronoun = result.matched ?? 'the pronoun';
-    return `What does "${pronoun}" refer to? Name the specific file, function, or concept.`;
+    return `Ask the user what "${pronoun}" refers to — the specific file, function, or concept is not named.`;
   },
 
   explain(): string {
