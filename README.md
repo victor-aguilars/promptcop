@@ -5,24 +5,29 @@
   </picture>
 </div>
 
-A prompt linter for Claude Code. Analyzes your prompts for anti-patterns and surfaces issues as context for the model — like ESLint, but for the things you type.
+A prompt linter for Claude Code and Cursor. Analyzes your prompts for anti-patterns and surfaces issues as context for the model — like ESLint, but for the things you type.
 
 ---
 
-## Setup with Claude Code
+## Setup
 
 Install the hook and every prompt you send gets linted automatically:
 
 ```bash
+# Claude Code (default)
 npx promptocop hook install
+
+# Cursor
+npx promptocop hook install --target cursor
 ```
 
-This adds a `UserPromptSubmit` hook to `~/.claude/settings.json`. When a prompt has issues, the lint results are injected as context so Claude can factor them into its response — nothing is blocked by default.
+For Claude Code this adds a `UserPromptSubmit` hook to `~/.claude/settings.json`. For Cursor it adds a `beforeSubmitPrompt` hook to `~/.cursor/hooks.json`. When a prompt has issues, the lint results are injected as context so the model can factor them into its response — nothing is blocked by default.
 
 To remove:
 
 ```bash
 npx promptocop hook uninstall
+npx promptocop hook uninstall --target cursor
 ```
 
 ### How it works

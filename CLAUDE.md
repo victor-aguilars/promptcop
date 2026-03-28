@@ -1,6 +1,6 @@
 # promptocop
 
-A prompt linter for Claude Code. Analyzes your prompts for anti-patterns and surfaces issues as context for the model — like ESLint, but for the things you type at Claude.
+A prompt linter for Claude Code and Cursor. Analyzes your prompts for anti-patterns and surfaces issues as context for the model — like ESLint, but for the things you type at Claude.
 
 ---
 
@@ -8,9 +8,10 @@ A prompt linter for Claude Code. Analyzes your prompts for anti-patterns and sur
 
 `promptocop` is a Node.js CLI tool that analyzes prompts for anti-patterns known to cause correction loops, token waste, and task drift. It ships with a rule engine modeled after ESLint: rules have severity levels (error/warn/info), are individually configurable via a `.promptocop.yml` config file, and can be organized into shareable presets.
 
-There are two integration modes:
+There are three integration modes:
 1. **Standalone CLI** — `promptocop lint "your prompt"` run manually before sending
 2. **Claude Code hook** — wired into Claude Code's `UserPromptSubmit` lifecycle hook so it runs automatically before every message
+3. **Cursor hook** — wired into Cursor's `beforeSubmitPrompt` lifecycle hook for automatic linting
 
 ---
 
@@ -52,7 +53,9 @@ promptocop/
 │   ├── presets/
 │   │   └── recommended.ts  # Default ruleset and severities
 │   └── hook/
-│       └── install.ts      # Claude Code hook installer
+│       ├── install.ts      # Target-agnostic hook installer / uninstaller
+│       ├── targets.ts      # Editor-specific hook targets (Claude Code, Cursor)
+│       └── __tests__/      # Hook unit + integration tests
 ├── CLAUDE.md               # This file
 ├── package.json
 ├── tsconfig.json
@@ -143,11 +146,17 @@ promptocop explain no-vague-verb
 # List all available rules
 promptocop rules
 
-# Install the Claude Code hook
+# Install the hook (Claude Code by default)
 promptocop hook install
 
-# Uninstall the Claude Code hook
+# Install the hook for Cursor
+promptocop hook install --target cursor
+
+# Uninstall the hook
 promptocop hook uninstall
+
+# Uninstall the Cursor hook
+promptocop hook uninstall --target cursor
 
 # Initialize a .promptocop.yml in current directory
 promptocop init
@@ -173,7 +182,7 @@ promptocop v0.1.0
 
 ### Directive (hook mode default)
 
-Used when `--hook` is passed. Written to stdout so Claude Code injects it as context before responding.
+Used when `--hook` is passed. Written to stdout so the editor injects it as context before responding.
 
 ```
 [promptocop] The user's prompt is missing critical information. DO NOT guess or investigate autonomously — ask the user to clarify the items marked MUST below before proceeding.
@@ -239,28 +248,38 @@ If no config is found, `promptocop:recommended` is used as the default.
 
 ---
 
-## Claude Code hook integration
+## Editor hook integration
 
-Claude Code supports lifecycle hooks defined in `~/.claude/settings.json` under the `hooks` key. The `UserPromptSubmit` hook fires when the user submits a message, receiving the prompt as JSON on stdin (`{ "prompt": "..." }`).
+promptocop integrates with editor hooks via `promptocop hook install --target <editor>`. The `--target` flag selects the editor (`claude` or `cursor`, default `claude`).
+
+### Supported editors
+
+| Editor | Config file | Hook event | Install command |
+|--------|------------|------------|-----------------|
+| Claude Code | `~/.claude/settings.json` | `UserPromptSubmit` | `promptocop hook install` |
+| Cursor | `~/.cursor/hooks.json` | `beforeSubmitPrompt` | `promptocop hook install --target cursor` |
 
 ### What `promptocop hook install` does
 
-1. Reads `~/.claude/settings.json` (creates it if missing)
-2. Appends a `UserPromptSubmit` hook entry pointing to the `promptocop` binary
+1. Reads the editor's config file (creates it if missing)
+2. Appends a hook entry pointing to the `promptocop` binary
+3. Detection is idempotent — re-running install when already present is a no-op
 
 ### Hook behavior
 
-`UserPromptSubmit` fires *after* the user presses Enter. The hook is **always non-blocking** — it never prevents a prompt from being sent. Instead it injects lint feedback as context that Claude sees before it starts responding.
+The hook fires *after* the user presses Enter. It is **always non-blocking** — it never prevents a prompt from being sent. Instead it injects lint feedback as context that the model sees before it starts responding.
 
 **Behavior:**
-- Violations found → writes formatted violations to stdout, exits 0. Claude Code injects this as context.
+- Violations found → writes formatted violations to stdout, exits 0. The editor injects this as context.
 - All pass (or `enabled: false`) → exits 0 silently, nothing injected.
 
 The output format is controlled by `context.mode` in `.promptocop.yml`:
 - `directive` (default) — LLM-targeted instructions with severity-specific preambles, uses `rule.directive()` output
 - `compact` — one violation per line (`severity: rule: message`)
 
-### Hook config shape (written into settings.json)
+### Hook config shapes
+
+**Claude Code** (written into `~/.claude/settings.json`):
 
 ```json
 {
@@ -274,6 +293,22 @@ The output format is controlled by `context.mode` in `.promptocop.yml`:
             "command": "npx promptocop lint --hook -"
           }
         ]
+      }
+    ]
+  }
+}
+```
+
+**Cursor** (written into `~/.cursor/hooks.json`):
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "beforeSubmitPrompt": [
+      {
+        "command": "npx promptocop lint --hook -",
+        "type": "command"
       }
     ]
   }
@@ -331,7 +366,7 @@ promptocop lint "refactor the auth module" --ai
 - [x] CLI entry point with all commands (`lint`, `explain`, `rules`, `init`, `hook`)
 - [x] Default + compact + JSON + directive formatters
 - [x] `--fix` mode
-- [x] Hook installer / uninstaller
+- [x] Hook installer / uninstaller (Claude Code + Cursor)
 - [x] `promptocop:recommended` preset
 - [x] `directive()` method on rules — LLM-targeted context injection in hook mode
 - [ ] README

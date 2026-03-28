@@ -153,21 +153,23 @@ rules:
 
 program
   .command('hook')
-  .description('Manage Claude Code hook integration')
+  .description('Manage editor hook integration')
   .addCommand(
     new Command('install')
-      .description('Install the promptocop hook into ~/.claude/settings.json')
-      .action(async () => {
+      .description('Install the promptocop hook (use --target to select editor)')
+      .option('--target <editor>', 'Target editor: claude, cursor', 'claude')
+      .action(async (options: { target: string }) => {
         const { install } = await import('./hook/install.js');
-        install();
+        install(options.target);
       }),
   )
   .addCommand(
     new Command('uninstall')
-      .description('Remove the promptocop hook from ~/.claude/settings.json')
-      .action(async () => {
+      .description('Remove the promptocop hook (use --target to select editor)')
+      .option('--target <editor>', 'Target editor: claude, cursor', 'claude')
+      .action(async (options: { target: string }) => {
         const { uninstall } = await import('./hook/install.js');
-        uninstall();
+        uninstall(options.target);
       }),
   );
 
